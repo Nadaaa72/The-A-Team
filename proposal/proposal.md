@@ -42,6 +42,13 @@ Emergency responder allocation will be modelled as a Constraint Satisfaction Pro
 
 We will implement backtracking search, Minimum Remaining Values (MRV) and forward checking to improve search efficiency. We will also compare valid assignments using incident priority and estimated response time, while accounting for emergencies that cannot be assigned a responder.
 
+
+### Figure 1: AI Dispatch Workflow
+
+![AI Dispatch Workflow](Dublin%20Emergency%20Response%20AI%20Workflow.png)
+
+*Figure 1: Proposed workflow showing simulated incidents, knowledge-based reasoning, A* and Dijkstra routing, CSP responder assignment and dashboard visualisation.*
+
 ## 3. System Architecture and Implementation
 
 The system will begin with simulated emergency incidents, which will be processed by the knowledge base to determine their priority and required resources. The routing algorithms will calculate travel times, and the CSP solver will assign suitable responders.
@@ -50,6 +57,12 @@ A Streamlit dashboard with Folium maps will display incidents, responder locatio
 
 The project will use Python, NetworkX and OSMnx to model Dublin's road network using OpenStreetMap data, following the network modelling approach described by Boeing (2025). Streamlit and Folium will be used for visualisation, while Pytest will support automated testing. We will develop the main AI components first, then integrate them into the dashboard and test the complete system.
 
+
+### Figure 2: System Architecture
+
+![System Architecture](Dublin%20Emergency%20Dispatch%20Architecture.png)
+
+*Figure 2: Proposed system architecture showing simulated inputs, AI processing components and expected outputs.*
 
 ## 4. Individual Team Contributions
 
@@ -118,6 +131,6 @@ Our expected outcome is a working prototype that demonstrates how knowledge-driv
 
 19. Breuss, M. (2025). [Python Folium: Create Web Maps From Your Data](https://realpython.com/python-folium-web-maps-from-data/). *Real Python*.
 
+### Declaration of Generative AI Use:
 
-### Declaration:
-Generative AI tools (Claude and ChtGPT) were used to help draft, structure and format this proposal. The group reviewed and edited the content and is responsible for all design decisions and final submission.
+Generative AI tools (Claude and ChatGPT, including OpenAI's image generation tool) were used to assist with drafting, structuring and formatting this proposal, and to generate the two system diagrams. All written content and diagrams were reviewed by the group, who remain responsible for the project's design decisions and final submission.
