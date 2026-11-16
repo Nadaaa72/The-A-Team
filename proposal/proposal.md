@@ -21,6 +21,12 @@
 
 Emergency dispatch involves making decisions about incident urgency, suitable resources and routes while vehicle availability and road conditions change. Our project proposes a Python-based educational simulation for a selected area of Dublin, combining symbolic reasoning, graph search and constraint satisfaction. The system will use OpenStreetMap road data and simulated incidents, vehicles and traffic conditions. It will not process real patient information or provide operational emergency advice. Research into emergency resource allocation and ambulance demand forecasting demonstrates the importance of efficient resource planning (Kalogiannidis et al., 2026; Butsingkorn et al., 2026).
 
+### Figure 1: AI Dispatch Workflow
+
+![AI Dispatch Workflow](Dublin%20Emergency%20Response%20AI%20Workflow.png)
+
+*Figure 1: Overview of the proposed knowledge-driven emergency dispatch workflow, from simulated incidents to responder assignment and visualisation.*
+
 The initial scope includes medical emergencies, building fires and road collisions, with approximately 5-10 incidents and 6-12 ambulance or fire and rescue vehicles. We will model the system state as S = (I, R, G, A), where I represents incidents and their requirements, R represents responder locations, capabilities and availability, G represents the weighted road network, and A represents current assignments.
 
 Possible actions include assigning responders, updating availability, blocking roads and recalculating routes. Our goal is to find valid assignments that prioritise urgent incidents while keeping estimated response times low. Constraints will prevent double-booking, assigning unsuitable vehicles and selecting unreachable routes. The system will also account for situations where there are not enough available responders.
@@ -30,7 +36,7 @@ Our approach draws on established methods in search, knowledge representation an
 
 **Knowledge Representation and Reasoning:**
 
-We will use a knowledge base containing incident facts and IF-THEN rules, with forward chaining to infer emergency priorities and resource requirements. For example, a building fire involving trapped occupants could trigger a rule requiring rescue capabilities. The system will record which rules were applied so users can understand how decisions were reached. These rules are simplified for simulation purposes and are not official emergency response protocols.
+A knowledge base containing incident facts and IF-THEN rules will use forward chaining to determine required resources and assign simulated priority levels: Critical, High, Medium or Low. For example, a building fire with trapped occupants may require rescue capabilities and receive Critical priority. The system will record the rules applied to explain its decisions. These simplified rules are for educational simulation and are not official emergency response protocols.
 
 **Search Algorithms:**
 
@@ -38,31 +44,35 @@ Dublin's road network will be represented as a weighted graph, with edge weights
 
 **Constraint Satisfaction:**
 
-Emergency responder allocation will be modelled as a Constraint Satisfaction Problem (CSP). Each required responder role for an incident will be represented as a variable, with a domain of available, suitable and reachable vehicles. Constraints will ensure that responders have the required capabilities and cannot be assigned to multiple simultaneous incidents. An unassigned option will allow the system to handle resource shortages, with higher penalties for leaving urgent incidents unattended.
+Emergency responder allocation will be modelled as a Constraint Satisfaction Problem (CSP). Each required responder role will be a variable with a domain of suitable, available and reachable vehicles. Constraints will prevent double-booking and incompatible assignments. An unassigned option will represent resource shortages.
 
-We will implement backtracking search, Minimum Remaining Values (MRV) and forward checking to improve search efficiency. We will also compare valid assignments using incident priority and estimated response time, while accounting for emergencies that cannot be assigned a responder.
+We will implement backtracking, Minimum Remaining Values (MRV) and forward checking. Feasible assignments will be compared using a priority-weighted cost function that combines estimated response times with penalties for unassigned incidents. The solver will select the lowest-cost assignment found within the scenario's search limits.
 
+### Figure 2: Priority-Weighted Dispatch Scoring
 
-### Figure 1: AI Dispatch Workflow
+![Priority-Weighted Dispatch Scoring](Priority%20Cost%20Selection%20Infographic.png)
 
-![AI Dispatch Workflow](Dublin%20Emergency%20Response%20AI%20Workflow.png)
-
-*Figure 1: Proposed workflow showing simulated incidents, knowledge-based reasoning, A* and Dijkstra routing, CSP responder assignment and dashboard visualisation.*
+*Figure 2: Illustrative priority-weighted cost model used to compare feasible responder assignments.*
 
 ## 3. System Architecture and Implementation
 
-The system will begin with simulated emergency incidents, which will be processed by the knowledge base to determine their priority and required resources. The routing algorithms will calculate travel times, and the CSP solver will assign suitable responders.
+Simulated incidents will enter the knowledge base, which determines priorities and resource requirements. A* will calculate estimated travel times between available responders and incidents, providing a cost matrix for the CSP solver to evaluate assignments. The system will then display recommended responders, routes and explanations through a Streamlit dashboard with Folium maps.
 
-A Streamlit dashboard with Folium maps will display incidents, responder locations, routes and dispatch decisions. Users will be able to simulate changes such as road closures, congestion and unavailable vehicles, allowing the system to recalculate affected routes and assignments.
+### Figure 3: Routing Costs and Dynamic Replanning
 
-The project will use Python, NetworkX and OSMnx to model Dublin's road network using OpenStreetMap data, following the network modelling approach described by Boeing (2025). Streamlit and Folium will be used for visualisation, while Pytest will support automated testing. We will develop the main AI components first, then integrate them into the dashboard and test the complete system.
+![Routing Costs and Dynamic Replanning](Routing%20Costs%20to%20CSP%20Dispatch%20Feedback%20Loop.png)
 
+*Figure 3: Proposed routing-to-CSP integration and recalculation of affected assignments when conditions change.*
 
-### Figure 2: System Architecture
+Users can simulate road closures, congestion and vehicle unavailability. When conditions change, affected travel times and assignments will be recalculated, retaining existing assignments where possible.
+
+Python, NetworkX and OSMnx will support road-network modelling using OpenStreetMap data, following Boeing (2025). Pytest will support automated testing. The AI components will be developed and tested before dashboard integration.
+
+### Figure 4: System Architecture
 
 ![System Architecture](Dublin%20Emergency%20Dispatch%20Architecture.png)
 
-*Figure 2: Proposed system architecture showing simulated inputs, AI processing components and expected outputs.*
+*Figure 4: Proposed system components, simulated inputs and expected outputs.*
 
 ## 4. Individual Team Contributions
 
@@ -76,12 +86,9 @@ All members will contribute to integration, documentation and the final demonstr
 
 ## 5. Evaluation and Expected Outcomes
 
-We will evaluate the system using simulated scenarios with known expected results. We will also test the knowledge base using predefined incidents to verify that the correct priorities and resource requirements are inferred. A* and Dijkstra will be compared based on route cost, execution time and nodes explored. CSP-based dispatch will be compared with greedy allocation using assignment validity, estimated response times and the number of incidents served.
+Predefined scenarios will test whether forward chaining infers the expected priorities and resource requirements. A* and Dijkstra will be compared using route cost, execution time and nodes explored. CSP dispatch will be compared with greedy allocation using assignment validity, incidents served and priority-weighted response cost. Basic backtracking will be compared with MRV and forward checking using search effort.
 
-We will also compare basic backtracking with MRV and forward checking to measure search efficiency. Scenarios involving road closures, increased emergency demand and limited responders will be used to test how the system adapts to changing conditions.
-
-Our expected outcome is a working prototype that demonstrates how knowledge-driven AI techniques can be combined to make explainable emergency dispatch decisions.
-
+Road closures, congestion and responder shortages will test replanning correctness and execution time. The expected outcome is a working simulation demonstrating explainable, priority-aware emergency dispatch.
 
 ## References
 
@@ -133,4 +140,4 @@ Our expected outcome is a working prototype that demonstrates how knowledge-driv
 
 ### Declaration of Generative AI Use:
 
-Generative AI tools (Claude and ChatGPT, including OpenAI's image generation tool) were used to assist with drafting, structuring and formatting this proposal, and to generate the two system diagrams. All written content and diagrams were reviewed by the group, who remain responsible for the project's design decisions and final submission.
+Generative AI tools (Claude and ChatGPT, including OpenAI's image generation tool) were used to assist with drafting, structuring and formatting this proposal, and to generate the diagrams. All written content and diagrams were reviewed by the group, who remain responsible for the project's design decisions and final submission.
