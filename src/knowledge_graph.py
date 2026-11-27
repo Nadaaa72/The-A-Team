@@ -1,3 +1,5 @@
+from src.inference_engine import is_var
+
 class KnowledgeGraph:
     def __init__(self, triples=None):
         # Relationships stored as subject, predicate and object
@@ -34,3 +36,47 @@ class KnowledgeGraph:
 
     def objects(self, s, p):
         return [triple[2] for triple in self.match(s, p)]
+    
+        # Graph queries
+
+    def select(self, patterns):
+        results = [{}]
+
+        for pattern in patterns:
+            new_results = []
+
+            for bindings in results:
+                query = []
+
+                for term in pattern:
+                    if is_var(term) and term in bindings:
+                        query.append(bindings[term])
+                    else:
+                        query.append(term)
+
+                wanted = []
+
+                for term in query:
+                    if is_var(term):
+                        wanted.append(None)
+                    else:
+                        wanted.append(term)
+
+                for triple in self.match(wanted[0], wanted[1], wanted[2]):
+                    new_bindings = dict(bindings)
+                    valid = True
+
+                    for term, value in zip(pattern, triple):
+                        if is_var(term):
+                            if term in new_bindings and new_bindings[term] != value:
+                                valid = False
+                                break
+
+                            new_bindings[term] = value
+
+                    if valid:
+                        new_results.append(new_bindings)
+
+            results = new_results
+
+        return results
