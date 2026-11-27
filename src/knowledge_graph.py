@@ -115,3 +115,37 @@ class KnowledgeGraph:
                 queue.append(next_node)
 
         return None
+
+    def reachable(self, start, predicate):
+        found = []
+        visited = set()
+        queue = [start]
+
+        while queue:
+            node = queue.pop(0)
+
+            for obj in self.objects(node, predicate):
+                if obj not in visited:
+                    visited.add(obj)
+                    found.append(obj)
+                    queue.append(obj)
+
+        return found
+
+    # Ontology inheritance
+
+    def superclasses(self, cls):
+        return self.reachable(cls, "subClassOf")
+
+    def classes_of(self, individual):
+        result = []
+
+        for cls in self.objects(individual, "instanceOf"):
+            if cls not in result:
+                result.append(cls)
+
+            for superclass in self.superclasses(cls):
+                if superclass not in result:
+                    result.append(superclass)
+
+        return result
