@@ -13,8 +13,8 @@ class KnowledgeGraph:
     def copy(self):
         return KnowledgeGraph(self.triples)
 
-    def add(self, s, p, o):
-        self.triples.add((s, p, o))
+    def add(self, subject, predicate, obj):
+        self.triples.add((subject, predicate, obj))
 
     def match(self, s=None, p=None, o=None):
         # None allows any value to match
@@ -168,3 +168,52 @@ class KnowledgeGraph:
                 result.add(triple[0])
 
         return sorted(result)
+
+    def check_domain_range(self, predicate, domain, range_class):
+        invalid = []
+
+        for triple in self.match(p=predicate):
+            subject_classes = self.classes_of(triple[0])
+            object_classes = self.classes_of(triple[2])
+
+            if domain not in subject_classes or range_class not in object_classes:
+                invalid.append(triple)
+
+        return invalid
+
+
+def build_dispatch_ontology():
+    graph = KnowledgeGraph()
+
+    subclasses = [
+        ("ambulance", "vehicle"),
+        ("bls_ambulance", "ambulance"),
+        ("als_ambulance", "bls_ambulance"),
+        ("fire_appliance", "vehicle"),
+        ("fire_engine", "fire_appliance"),
+        ("aerial_ladder", "fire_engine"),
+        ("rescue_tender", "vehicle"),
+        ("medical", "incident"),
+        ("fire", "incident"),
+        ("collision", "incident")
+    ]
+
+    for subclass, superclass in subclasses:
+        graph.add(subclass, "subClassOf", superclass)
+
+    capabilities = [
+        ("bls_ambulance", "bls"),
+        ("als_ambulance", "als"),
+        ("fire_engine", "fire_suppression"),
+        ("aerial_ladder", "aerial"),
+        ("rescue_tender", "rescue_tools"),
+        ("rescue_tender", "hazmat")
+    ]
+
+    for vehicle_class, capability in capabilities:
+        graph.add(vehicle_class, "provides", capability)
+
+    return graph
+
+
+DISPATCH_ONTOLOGY = build_dispatch_ontology()
