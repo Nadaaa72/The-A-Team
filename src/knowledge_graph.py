@@ -118,7 +118,7 @@ class KnowledgeGraph:
 
     def reachable(self, start, predicate):
         found = []
-        visited = set()
+        visited = {start}
         queue = [start]
 
         while queue:
@@ -149,3 +149,22 @@ class KnowledgeGraph:
                     result.append(superclass)
 
         return result
+
+    def capabilities_of_class(self, cls):
+        # Include capabilities inherited from parent classes
+        capabilities = set()
+
+        for vehicle_class in [cls] + self.superclasses(cls):
+            for capability in self.objects(vehicle_class, "provides"):
+                capabilities.add(capability)
+
+        return capabilities
+
+    def individuals_providing(self, capability):
+        result = set()
+
+        for triple in self.match(p="instanceOf"):
+            if capability in self.capabilities_of_class(triple[2]):
+                result.add(triple[0])
+
+        return sorted(result)
