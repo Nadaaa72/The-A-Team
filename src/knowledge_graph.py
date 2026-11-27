@@ -1,5 +1,6 @@
 from src.inference_engine import is_var
 
+
 class KnowledgeGraph:
     def __init__(self, triples=None):
         # Relationships stored as subject, predicate and object
@@ -14,7 +15,7 @@ class KnowledgeGraph:
 
     def add(self, s, p, o):
         self.triples.add((s, p, o))
-        
+
     def match(self, s=None, p=None, o=None):
         # None allows any value to match
         found = []
@@ -36,8 +37,8 @@ class KnowledgeGraph:
 
     def objects(self, s, p):
         return [triple[2] for triple in self.match(s, p)]
-    
-        # Graph queries
+
+    # Graph queries
 
     def select(self, patterns):
         results = [{}]
@@ -46,19 +47,11 @@ class KnowledgeGraph:
             new_results = []
 
             for bindings in results:
-                query = []
-
-                for term in pattern:
-                    if is_var(term) and term in bindings:
-                        query.append(bindings[term])
-                    else:
-                        query.append(term)
-
                 wanted = []
 
-                for term in query:
+                for term in pattern:
                     if is_var(term):
-                        wanted.append(None)
+                        wanted.append(bindings.get(term))
                     else:
                         wanted.append(term)
 
@@ -78,6 +71,9 @@ class KnowledgeGraph:
                         new_results.append(new_bindings)
 
             results = new_results
+
+        return results
+
     # Graph traversal
 
     def bfs_path(self, start, goal, predicates=None):
@@ -119,5 +115,3 @@ class KnowledgeGraph:
                 queue.append(next_node)
 
         return None
-    
-        return results
