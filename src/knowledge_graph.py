@@ -78,5 +78,46 @@ class KnowledgeGraph:
                         new_results.append(new_bindings)
 
             results = new_results
+    # Graph traversal
 
+    def bfs_path(self, start, goal, predicates=None):
+        if start == goal:
+            return []
+
+        parent = {}
+        queue = [start]
+        visited = {start}
+
+        while queue:
+            node = queue.pop(0)
+
+            for triple in self.match(s=node):
+                predicate = triple[1]
+                next_node = triple[2]
+
+                if predicates is not None and predicate not in predicates:
+                    continue
+
+                if next_node in visited:
+                    continue
+
+                visited.add(next_node)
+                parent[next_node] = (node, triple)
+
+                if next_node == goal:
+                    path = []
+                    current = next_node
+
+                    while current != start:
+                        previous, edge = parent[current]
+                        path.append(edge)
+                        current = previous
+
+                    path.reverse()
+                    return path
+
+                queue.append(next_node)
+
+        return None
+    
         return results
