@@ -212,46 +212,38 @@ class EmergencyKnowledgeBase:
 
         self.rules = rules
 
-    def assess(self, report):
-        incident_id = report.incident_id
-        engine = InferenceEngine(self.rules)
-
-        # Derive incident facts and priority candidates
-        engine.assert_facts(report.to_facts())
-        engine.run()
-
+    def resolve_priority(self, engine, incident_id):
         candidates = engine.query(
             ("priority_candidate", incident_id, "?l")
         )
 
-        if candidates:
-            best = candidates[0]
-
-            for candidate in candidates:
-                if O.PRIORITY_RANK[candidate[2]] > O.PRIORITY_RANK[best[2]]:
-                    best = candidate
-
-            priority = best[2]
-
+        if not candidates:
             engine.assert_derived(
-                ("priority", incident_id, priority),
-                "conflict_resolution",
-                "Highest-ranked priority candidate wins",
-                [best]
-            )
-
-        else:
-            priority = "Low"
-
-            engine.assert_derived(
-                ("priority", incident_id, priority),
+                ("priority", incident_id, "Low"),
                 "default_priority",
                 "No higher priority was derived"
             )
 
-        # Derive requirements based on the selected priority
-        engine.run()
+            return "Low"
 
+        best = candidates[0]
+
+        for candidate in candidates:
+            if O.PRIORITY_RANK[candidate[2]] > O.PRIORITY_RANK[best[2]]:
+                best = candidate
+
+        priority = best[2]
+
+        engine.assert_derived(
+            ("priority", incident_id, priority),
+            "conflict_resolution",
+            "Highest-ranked priority candidate wins",
+            [best]
+        )
+
+        return priority
+
+    def extract_requirements(self, engine, incident_id):
         needs = {}
 
         for fact in engine.query(("need", incident_id, "?c", "?s")):
@@ -273,9 +265,33 @@ class EmergencyKnowledgeBase:
         for key in sorted(needs):
             requirements.append(needs[key])
 
-        minutes = engine.query(
+        return requirements, superseded
+
+    def assess(self, report):
+        incident_id = report.incident_id
+        engine = InferenceEngine(self.rules)
+
+        #1. derive incident facts and priority candidates
+        engine.assert_facts(report.to_facts())
+        engine.run()
+
+        priority = self.resolve_priority(engine, incident_id)
+
+        #2. derive priority-dependent requirements
+        engine.run()
+
+        requirements, superseded = self.extract_requirements(
+            engine, incident_id
+        )
+
+        targets = engine.query(
             ("target_response", incident_id, "?m")
-        )[0][2]
+        )
+
+        if not targets:
+            raise ValueError("No response target derived for " + incident_id)
+
+        minutes = targets[0][2]
 
         return IncidentAssessment(
             incident_id,
