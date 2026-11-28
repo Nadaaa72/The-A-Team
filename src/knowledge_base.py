@@ -204,3 +204,85 @@ class IncidentAssessment:
             "rules_fired": self.rules_fired(),
             "explanation": self.explain()
         }
+        
+class EmergencyKnowledgeBase:
+    def __init__(self, rules=None):
+        if rules is None:
+            rules = build_rules()
+
+        self.rules = rules
+
+    def assess(self, report):
+        incident_id = report.incident_id
+        engine = InferenceEngine(self.rules)
+
+        # Derive incident facts and priority candidates
+        engine.assert_facts(report.to_facts())
+        engine.run()
+
+        candidates = engine.query(
+            ("priority_candidate", incident_id, "?l")
+        )
+
+        if candidates:
+            best = candidates[0]
+
+            for candidate in candidates:
+                if O.PRIORITY_RANK[candidate[2]] > O.PRIORITY_RANK[best[2]]:
+                    best = candidate
+
+            priority = best[2]
+
+            engine.assert_derived(
+                ("priority", incident_id, priority),
+                "conflict_resolution",
+                "Highest-ranked priority candidate wins",
+                [best]
+            )
+
+        else:
+            priority = "Low"
+
+            engine.assert_derived(
+                ("priority", incident_id, priority),
+                "default_priority",
+                "No higher priority was derived"
+            )
+
+        # Derive requirements based on the selected priority
+        engine.run()
+
+        needs = {}
+
+        for fact in engine.query(("need", incident_id, "?c", "?s")):
+            requirement = Requirement(incident_id, fact[2], fact[3])
+            needs[requirement.key()] = requirement
+
+        superseded = []
+
+        als_key = (incident_id, "als", 1)
+        bls_key = (incident_id, "bls", 1)
+
+        # ALS also provides BLS capability
+        if als_key in needs and bls_key in needs:
+            superseded.append(needs[bls_key])
+            del needs[bls_key]
+
+        requirements = []
+
+        for key in sorted(needs):
+            requirements.append(needs[key])
+
+        minutes = engine.query(
+            ("target_response", incident_id, "?m")
+        )[0][2]
+
+        return IncidentAssessment(
+            incident_id,
+            report,
+            priority,
+            requirements,
+            minutes,
+            engine,
+            superseded
+        )
