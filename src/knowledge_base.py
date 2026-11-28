@@ -88,5 +88,114 @@ class Requirement:
         self.slot = slot
         self.role_id = incident_id + ":" + capability + "#" + str(slot)
 
+class IncidentAssessment:
+    def __init__(self, incident_id, report, priority, requirements,
+                 target_minutes, engine, superseded):
+
+        self.incident_id = incident_id
+        self.report = report
+        self.priority = priority
+        self.requirements = requirements
+        self.target_response_minutes = target_minutes
+        self.engine = engine
+        self.superseded = superseded
+        self.priority_rank = O.PRIORITY_RANK[priority]
+
+    def capability_counts(self):
+        counts = {}
+
+        for requirement in self.requirements:
+            capability = requirement.capability
+            counts[capability] = counts.get(capability, 0) + 1
+
+        return counts
+
+    def rules_fired(self):
+        return self.engine.rules_fired()
+
+    def prove(self, goal):
+        node = self.engine.ask(goal)
+
+        if node is None:
+            return fmt_fact(goal) + " cannot be derived from the current facts and rules"
+
+        return "\n".join(explain_proof(node))
+
+    def explain_priority(self):
+        fact = ("priority", self.incident_id, self.priority)
+        lines = self.engine.explain(fact)
+        levels = []
+
+        for fact in self.engine.query(("priority_candidate", self.incident_id, "?l")):
+            if fact[2] not in levels:
+                levels.append(fact[2])
+
+        levels.sort(key=O.PRIORITY_RANK.get, reverse=True)
+
+        if not levels:
+            lines.append("  candidates considered: none")
+        else:
+            lines.append("  candidates considered: " + ", ".join(levels))
+
+        return "\n".join(lines)
+
+    def explain_requirement(self, requirement):
+        fact = (
+            "need",
+            requirement.incident_id,
+            requirement.capability,
+            requirement.slot
+        )
+
+        return "\n".join(self.engine.explain(fact))
+
+    def explain(self):
+        output = [
+            "Incident " + self.incident_id + " (" + self.report.incident_type + ")",
+            "Priority: " + self.priority,
+            "Target response: " + str(self.target_response_minutes) + " minutes",
+            self.explain_priority(),
+            "Requirements:"
+        ]
+
+        if not self.requirements:
+            output.append("(none)")
+
+        for requirement in self.requirements:
+            output.append(self.explain_requirement(requirement))
+
+        for requirement in self.superseded:
+            output.append(
+                requirement.role_id + " replaced: an ALS unit also provides BLS capability"
+            )
+
+        return "\n".join(output)
+
+    def to_dict(self):
+        requirements = []
+
+        for requirement in self.requirements:
+            requirements.append({
+                "role_id": requirement.role_id,
+                "capability": requirement.capability,
+                "slot": requirement.slot
+            })
+
+        rounds = []
+
+        for round_facts in self.engine.rounds:
+            rounds.append([fmt_fact(fact) for fact in round_facts])
+
+        return {
+            "incident_id": self.incident_id,
+            "type": self.report.incident_type,
+            "priority": self.priority,
+            "target_response_minutes": self.target_response_minutes,
+            "requirements": requirements,
+            "forward_chaining_rounds": rounds,
+            "rules_fired": self.rules_fired(),
+            "explanation": self.explain()
+        }
+
     def key(self):
         return (self.incident_id, self.capability, self.slot)
