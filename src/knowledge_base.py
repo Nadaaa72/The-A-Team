@@ -46,7 +46,7 @@ class IncidentReport:
 
         if self.fire_size is not None and self.fire_size not in O.FIRE_SIZES:
             raise ValueError("Unknown fire size: " + str(self.fire_size))
-        
+
     def to_facts(self):
         incident_id = self.incident_id
 
@@ -78,6 +78,7 @@ class IncidentReport:
 
         return facts
 
+
 class Requirement:
     def __init__(self, incident_id, capability, slot):
         if capability not in O.CAPABILITIES:
@@ -87,6 +88,17 @@ class Requirement:
         self.capability = capability
         self.slot = slot
         self.role_id = incident_id + ":" + capability + "#" + str(slot)
+
+    def key(self):
+        return (self.incident_id, self.capability, self.slot)
+
+    def to_dict(self):
+        return {
+            "role_id": self.role_id,
+            "capability": self.capability,
+            "slot": self.slot
+        }
+
 
 class IncidentAssessment:
     def __init__(self, incident_id, report, priority, requirements,
@@ -151,9 +163,9 @@ class IncidentAssessment:
 
     def explain(self):
         output = [
-            "Incident " + self.incident_id + " (" + self.report.incident_type + ")",
-            "Priority: " + self.priority,
-            "Target response: " + str(self.target_response_minutes) + " minutes",
+            f"Incident {self.incident_id} ({self.report.incident_type})",
+            f"Priority: {self.priority}",
+            f"Target response: {self.target_response_minutes} minutes",
             self.explain_priority(),
             "Requirements:"
         ]
@@ -166,20 +178,16 @@ class IncidentAssessment:
 
         for requirement in self.superseded:
             output.append(
-                requirement.role_id + " replaced: an ALS unit also provides BLS capability"
+                f"{requirement.role_id} replaced: an ALS unit also provides BLS capability"
             )
 
         return "\n".join(output)
 
     def to_dict(self):
-        requirements = []
-
-        for requirement in self.requirements:
-            requirements.append({
-                "role_id": requirement.role_id,
-                "capability": requirement.capability,
-                "slot": requirement.slot
-            })
+        requirements = [
+            requirement.to_dict()
+            for requirement in self.requirements
+        ]
 
         rounds = []
 
@@ -196,6 +204,3 @@ class IncidentAssessment:
             "rules_fired": self.rules_fired(),
             "explanation": self.explain()
         }
-
-    def key(self):
-        return (self.incident_id, self.capability, self.slot)
