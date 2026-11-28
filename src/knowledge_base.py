@@ -46,3 +46,47 @@ class IncidentReport:
 
         if self.fire_size is not None and self.fire_size not in O.FIRE_SIZES:
             raise ValueError("Unknown fire size: " + str(self.fire_size))
+        
+    def to_facts(self):
+        incident_id = self.incident_id
+
+        facts = [
+            ("incident", incident_id),
+            ("incident_type", incident_id, self.incident_type),
+            ("casualties", incident_id, self.casualties),
+            ("trapped", incident_id, self.trapped),
+            ("vehicles_involved", incident_id, self.vehicles_involved)
+        ]
+
+        for symptom in sorted(self.symptoms):
+            facts.append(("symptom", incident_id, symptom))
+
+        for hazard in sorted(self.hazards):
+            facts.append(("hazard", incident_id, hazard))
+
+        if self.building_type:
+            facts.append(("building", incident_id, self.building_type))
+
+        if self.fire_size:
+            facts.append(("fire_size", incident_id, self.fire_size))
+
+        if self.occupied:
+            facts.append(("occupied", incident_id))
+
+        if self.road_blocked:
+            facts.append(("road_blocked", incident_id))
+
+        return facts
+
+class Requirement:
+    def __init__(self, incident_id, capability, slot):
+        if capability not in O.CAPABILITIES:
+            raise ValueError("Unknown capability: " + str(capability))
+
+        self.incident_id = incident_id
+        self.capability = capability
+        self.slot = slot
+        self.role_id = incident_id + ":" + capability + "#" + str(slot)
+
+    def key(self):
+        return (self.incident_id, self.capability, self.slot)
